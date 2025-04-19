@@ -1,0 +1,15 @@
+{
+  "name": "live-stream-samples",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Eluvio Tools",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@eluvio/elv-client-js": "^4.0.116",
+    "express": "^5.1.0"
+  }
+}
