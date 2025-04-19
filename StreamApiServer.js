@@ -98,11 +98,10 @@ app.post('/streams/:stream_id/clip', async (req, res) => {
 
   status.clip_playout = {
     hls: "https://main.net955305.contentfabric.io/s/main/q/" + status.vod_object_id + "/rep/playout/default/hls-clear/playlist.m3u8" +
-      "?clip_start=" + req.body.clip_start + "&clip_end=" + req.body.clip_end;
+      "?clip_start=" + req.body.clip_start + "&clip_end=" + req.body.clip_end
   }
-  status.clip_download = {
-    "NOT YET IMPLEMENTED"
-  }
+  status.clip_download = "NOT YET IMPLEMENTED";
+
   res.status(200).json(status);
 });
 

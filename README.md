@@ -1,7 +1,8 @@
 
 
+## OVERVIEW
 
-## LIVE STREAM LIFE CYCLE
+### LIVE STREAM LIFE CYCLE
 
 A live stream is a content object of type "live stream".
 
@@ -24,24 +25,8 @@ The main operations on the live stream are:
 - stalled
 - stopped
 
-### SAMPLE CODE
 
-Assuming a stream is created and configured - this is done as part of the setup phase, before live events.
-
-- StreamStatus({libraryId, objectId});
-  - returns the status of the stream
-  - the variable state indicates if `unconfigured`, `inactive`, etc.
-
-- StreamStartRecording({libraryId, objectId})
-- StreamStopRecording({libraryId, objectId})
-
-- StreamStart({libraryId, objectId})
-- StreamStop({libraryId, objectId})
-
-- StreamDiscardRecording({libraryId, objectId})
-
-
-## RUN THE SAMPLE CODE
+## RUN THE LIVE STREAM MANAGEMENT PROXY
 
 One time setup:
 
@@ -55,24 +40,92 @@ First:
     export PRIVATE_KEY=0x...
 ```
 
-Edit `StreamManagement.js` - uncomment one function to run:
-
-
-```
-    //res = await StreamStatus({libraryId, objectId});
-    //res = await StreamStartRecording({libraryId, objectId});
-    //res = await StreamStopRecording({libraryId, objectId});
-    //res = await StreamStart({libraryId, objectId});
-    //res = await StreamStop({libraryId, objectId});
-    //res = await StreamToVod({libraryId, objectId});
-    //res = await StreamDiscardRecording({libraryId, objectId});
-```
-
 Then:
 
 ```
-    node StreamManagement.js
+    node StreamApiServer.js
 ```
 
+## API
+
+### Stream status
+
+`GET /streams/:stream_id`
+
+Example:
+```
+curl http://localhost:9001/streams/iq__2pLcFBmqEgHj2a2wdWyvLV6tcj44
+```
+
+### Start a new recording
+
+`POST /streams/:stream_id/start_recording`
+
+Body:
+```json
+{
+    "vod": true | false,
+    "vod_name": "string",  // Required if vod 'true'
+    "vod_id": "string"     // Required if vod 'true'
+
+}
+```
+
+If a VOD object is created, it is stored with the live stream recording so subsequent calls to create VOD will update the same object (effectively creating a progressive VOD).  The process is incremental.
+
+Example:
+```
+curl http://localhost:9001/streams/iq__2pLcFBmqEgHj2a2wdWyvLV6tcj44/start_recording -d '{"vod": true, "vod_name": "Team A v Team B", "vod_id":"F3DD3C39-565C-40AF-AB7F-3D216D57F5CC"}'
+```
+
+### Stop (end) a recording
+
+`POST /streams/:stream_id/stop_recording`
+
+Body:
+```json
+{
+    "vod": true | false,
+    "vod_name": "string",    // Required if vod not previously created
+    "vod_id": "string"       // Required if vod not previously created
+    "discard": true | false  // Discard after creating VOD object
+}
+```
+
+Example:
+```
+curl http://localhost:9001/streams/iq__2pLcFBmqEgHj2a2wdWyvLV6tcj44/stop_recording -d '{"discard": true, "vod":true}'
+
+```
+
+### Make VOD
+
+A VOD object can be updated progressively by simply calling the same API.  The VOD obeject ID is saved with the live stream recording.
+
+`POST /streams/:stream_id/vod`
+
+Body:
+```json
+{
+    "vod_name": "string",    // Required if vod not previously created
+    "vod_id": "string"       // Required if vod not previously created
+}
 
 
+### Make clip
+
+`POST /streams/:stream_id/clip`
+
+Body:
+```json
+{
+    "clip_start": 0,  // Seconds since start
+    "clip_end": 0     // Seconds since start (0 means play to the end)
+}
+```
+
+## COMMON FLOWS
+
+### LIVE EVENTS RECORDING TO VOD
+
+> Comming soon ...
