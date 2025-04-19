@@ -91,16 +91,15 @@ app.post('/streams/:stream_id/clip', async (req, res) => {
 
   let status;
   try {
+
     status = await Streams.StreamToVod({libraryId, objectId: streamId});
-  } catch(e) {
+
+    status = await Streams.StreamClip({vodObjectId: status.vod_object_id,
+      clipStart: req.body.clip_start, clipEnd: req.body.clip_end});
+
+    } catch(e) {
     console.log("ERROR", e, JSON.stringify(e.body,  null, 2));
   }
-
-  status.clip_playout = {
-    hls: "https://main.net955305.contentfabric.io/s/main/q/" + status.vod_object_id + "/rep/playout/default/hls-clear/playlist.m3u8" +
-      "?clip_start=" + req.body.clip_start + "&clip_end=" + req.body.clip_end
-  }
-  status.clip_download = "NOT YET IMPLEMENTED";
 
   res.status(200).json(status);
 });

@@ -19,13 +19,15 @@ import HttpClient from "@eluvio/elv-client-js/src/HttpClient.js";
 import fs from 'fs';
 
 
-// Globals
+// Global config
 let client;
 const networkName = "main"; // "main" or "demo"
 const libraryId = "ilibP5XeH1BCncUxdexqGuKbzfrAL2H";
 const libraryIdVod = "ilibstJmfXipE966Xjhv4vYZGmxmC8f"; // "ilibP5XeH1BCncUxdexqGuKbzfrAL2H";
+const vodLibraryId = "ilibstJmfXipE966Xjhv4vYZGmxmC8f"; // "ilibP5XeH1BCncUxdexqGuKbzfrAL2H";
 const typeVod = "iq__2kcZripMpjNGopo7upqv8Lswq4bf";
 const typeLive = "iq__sR2NQQCkGhymHCwu6qHS7b4h2J9";
+const fileServiceEndpoint = "https://host-76-74-29-4.contentfabric.io";
 
 const Init = async ({debug}) => {
 
@@ -165,16 +167,15 @@ const StreamStatus = async ({libraryId, objectId}) => {
     })
   );
 
+  let obj = await client.ContentObject({
+    libraryId,
+    objectId
+  });
+  status.hash = obj.hash;
+
   if (!statusRes.handle) {
     status.state = "stopped"
   } else {
-
-    let obj = await client.ContentObject({
-      libraryId,
-      objectId
-    });
-
-    status.hash = obj.hash;
     status.recording_id = status.edge_write_token;
     status.playout = {
       hls: "https://main.net955305.contentfabric.io/s/main/q/" + status.hash + "/rep/playout/default/hls-clear/playlist.m3u8"
@@ -192,7 +193,7 @@ const StreamStartRecording = async ({libraryId, objectId, vod, vodId, vodName}) 
 
   let status = await StreamStatus({libraryId, objectId});
   if (status.state != "inactive") {
-    console.log("ERROR: can only start a new recording if the stream is inactive");
+    console.log("ERROR: can only start a new recording if the stream is inactive", status.state);
     return status;
   }
   if (vod && (vodName == undefined || vodId == undefined)) {
@@ -312,7 +313,7 @@ const StreamStart = async ({libraryId, objectId}) => {
 const StreamStop = async ({libraryId, objectId}) => {
 
   let status = await StreamStatus({libraryId, objectId});
-  if (status.state != "starting" && status.state != "running") {
+  if (status.state != "starting" && status.state != "running" && status.state != "reconnecting") {
     console.log("ERROR: can only stop a recording that is running");
     return status;
   }
@@ -337,12 +338,12 @@ const StreamStop = async ({libraryId, objectId}) => {
 const StreamStopRecording = async ({libraryId, objectId}) => {
 
   let status = await StreamStatus({libraryId, objectId});
-  if (status.state != "stopped" && status.state != "starting" && status.state != "running") {
-    console.log("ERROR: can only end/stop a recording that is running or stopped");
+  if (status.state != "stopped" && status.state != "starting" && status.state != "running" && status.state != "reconnecting") {
+    console.log("ERROR: can only end/stop a recording that is running or stopped", status.state);
     return status;
   }
 
-  if (status.state == "starting" || status.state == "running") {
+  if (status.state == "starting" || status.state == "running" || status.state == "reconnecting") {
     status = await StreamStop({libraryId, objectId});
   }
 
@@ -371,7 +372,7 @@ const StreamToVod = async ({libraryId, objectId, vodObjectId, vodId, vodName}) =
 
   let status = await StreamStatus({libraryId, objectId});
   if (status.state != "stopped" && status.state != "running" && status.state != "starting" && status.state != "reconnecting") {
-    console.log("ERROR: can only copy an active stream");
+    console.log("ERROR: can only copy an active stream", status.state);
     return status;
   }
 
@@ -544,8 +545,19 @@ const StreamToVod = async ({libraryId, objectId, vodObjectId, vodId, vodName}) =
     status.vod_hash = fin.hash;
   }
 
-
   console.log("VOD DONE", status);
+
+  // Store VOD object id in live_recording_api.vod_object_id
+  await client.MergeMetadata({
+    libraryId: libraryId,
+    objectId: objectId,
+    writeToken: status.edge_write_token,
+    metadata: {
+      live_recording_api: {
+        vod_object_id: status.vod_object_id
+      }
+    }
+  });
 
   return status;
 
@@ -601,6 +613,69 @@ const StreamDiscardRecording = async ({libraryId, objectId}) => {
 
 }
 
+const StreamClip = async ({vodObjectId, clipStart, clipEnd}) => {
+
+  // Make access token
+  let accessToken = await client.authClient.GenerateAuthorizationToken({
+    libraryId: vodLibraryId,
+    objectId: vodObjectId,
+    update: true
+  });
+
+  const res = await client.CallBitcodeMethod({
+    libraryId: vodLibraryId,
+    objectId: vodObjectId,
+    method: "/media/files",
+    constant: false,
+    body: {
+      "offering": "default",
+      "start_ms": clipStart,
+      "end_ms": clipEnd,
+      "format": "mp4"
+    }
+  });
+
+  const jobId = res.job_id;
+  console.log("DOWNLOAD INITIATED", jobId);
+
+  let jobStatus = {
+    status: "not started"
+  }
+
+  while (jobStatus.status != "completed" && jobStatus.status != "failed") {
+    // Get job status
+    jobStatus = await client.CallBitcodeMethod({
+      libraryId: vodLibraryId,
+      objectId: vodObjectId,
+      method: "/media/files/" + jobId,
+      constant: true
+    });
+
+    console.log("FILE JOB", jobStatus);
+    await sleep(2000);
+  }
+
+  /*
+   * To overwrite file name set: "X-Content-Fabric-Set-Content-Disposition"
+   */
+  const url = fileServiceEndpoint + "/s/q/" + vodObjectId + "/call/media/files/" + jobId + "/download" +
+    "?authorization=" + accessToken;
+  console.log("DOWNLOAD URL", url);
+
+  let status = {
+    clip_playout: {
+      hls: "https://main.net955305.contentfabric.io/s/main/q/" + vodObjectId + "/rep/playout/default/hls-clear/playlist.m3u8" +
+        "?clip_start=" + clipStart + "&clip_end=" + clipEnd + "&authorization=" + accessToken
+    },
+    clip_download: url
+  }
+  return status;
+}
+
+const sleep = async(ms) => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // MAIN
 
 let res = {};
@@ -624,5 +699,6 @@ export default {
   StreamStart,
   StreamStop,
   StreamToVod,
+  StreamClip,
   StreamDiscardRecording
 }

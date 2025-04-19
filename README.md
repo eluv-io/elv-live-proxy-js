@@ -124,8 +124,14 @@ Body:
 }
 ```
 
+Example:
+
+```
+curl http://localhost:9001/streams/iq__BUTeBCqV9Rt1RCUhnY8NG8dFDs5/clip -d '{"clip_start":240, "clip_end":360}'
+```
+
 ## COMMON FLOWS
 
 ### LIVE EVENTS RECORDING TO VOD
 
-> Comming soon ...
+![live event recording](img/image.png)
