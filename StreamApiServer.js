@@ -81,6 +81,31 @@ app.post('/streams/:stream_id/vod', async (req, res) => {
   res.status(200).json(status);
 });
 
+// POST /streams/:stream_id/clip
+// - clip_start
+// - clip_end
+app.post('/streams/:stream_id/clip', async (req, res) => {
+  const streamId = req.params.stream_id;
+
+  console.log(`CLIP ${streamId}`);
+
+  let status;
+  try {
+    status = await Streams.StreamToVod({libraryId, objectId: streamId});
+  } catch(e) {
+    console.log("ERROR", e, JSON.stringify(e.body,  null, 2));
+  }
+
+  status.clip_playout = {
+    hls: "https://main.net955305.contentfabric.io/s/main/q/" + status.vod_object_id + "/rep/playout/default/hls-clear/playlist.m3u8" +
+      "?clip_start=" + req.body.clip_start + "&clip_end=" + req.body.clip_end;
+  }
+  status.clip_download = {
+    "NOT YET IMPLEMENTED"
+  }
+  res.status(200).json(status);
+});
+
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
