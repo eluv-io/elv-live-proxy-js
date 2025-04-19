@@ -62,7 +62,7 @@ curl http://localhost:9001/streams/iq__2pLcFBmqEgHj2a2wdWyvLV6tcj44
 `POST /streams/:stream_id/start_recording`
 
 Body:
-```json
+```
 {
     "vod": true | false,
     "vod_name": "string",  // Required if vod 'true'
@@ -83,7 +83,7 @@ curl http://localhost:9001/streams/iq__2pLcFBmqEgHj2a2wdWyvLV6tcj44/start_record
 `POST /streams/:stream_id/stop_recording`
 
 Body:
-```json
+```
 {
     "vod": true | false,
     "vod_name": "string",    // Required if vod not previously created
@@ -105,19 +105,19 @@ A VOD object can be updated progressively by simply calling the same API.  The V
 `POST /streams/:stream_id/vod`
 
 Body:
-```json
+```
 {
     "vod_name": "string",    // Required if vod not previously created
     "vod_id": "string"       // Required if vod not previously created
 }
-
+```
 
 ### Make clip
 
 `POST /streams/:stream_id/clip`
 
 Body:
-```json
+```
 {
     "clip_start": 0,  // Seconds since start
     "clip_end": 0     // Seconds since start (0 means play to the end)
