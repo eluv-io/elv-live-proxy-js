@@ -94,7 +94,7 @@ app.post('/streams/:stream_id/clip', async (req, res) => {
 
     status = await Streams.StreamToVod({libraryId, objectId: streamId});
 
-    status = await Streams.StreamClip({vodObjectId: status.vod_object_id,
+    status = await Streams.StreamClip({vodObjectId: status.vod_object_id, vodObjectHash: status.vod_hash,
       clipStart: req.body.clip_start, clipEnd: req.body.clip_end});
 
     } catch(e) {

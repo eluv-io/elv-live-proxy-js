@@ -613,7 +613,7 @@ const StreamDiscardRecording = async ({libraryId, objectId}) => {
 
 }
 
-const StreamClip = async ({vodObjectId, clipStart, clipEnd}) => {
+const StreamClip = async ({vodObjectId, vodObjectHash, clipStart, clipEnd}) => {
 
   // Make access token
   let accessToken = await client.authClient.GenerateAuthorizationToken({
@@ -625,6 +625,7 @@ const StreamClip = async ({vodObjectId, clipStart, clipEnd}) => {
   const res = await client.CallBitcodeMethod({
     libraryId: vodLibraryId,
     objectId: vodObjectId,
+    versionHash: vodObjectHash,
     method: "/media/files",
     constant: false,
     body: {
