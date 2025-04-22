@@ -112,9 +112,11 @@ Body:
 }
 ```
 
-### Make clip
+### Make clip (live stream)
 
 `POST /streams/:stream_id/clip`
+
+Where: `stream_id` can be either the object ID (`iq__`) or hash (`hq__`)
 
 Body:
 ```
@@ -129,6 +131,25 @@ Example:
 ```
 curl http://localhost:9001/streams/iq__BUTeBCqV9Rt1RCUhnY8NG8dFDs5/clip -d '{"clip_start":240, "clip_end":360}'
 ```
+
+### Make clip (VOD object)
+
+`POST /vod/:vod_id/clip`
+
+Body:
+```
+{
+    "clip_start": 0,  // Seconds since start
+    "clip_end": 0     // Seconds since start (0 means play to the end)
+}
+```
+
+Example:
+
+```
+curl http://localhost:9001/vod/iq__2aN6A5AQZxjo4Q82NK2c3DV6hrbM/clip -d '{"clip_start": 520, "clip_end": 550}'
+```
+
 
 ## COMMON FLOWS
 

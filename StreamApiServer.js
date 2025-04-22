@@ -87,7 +87,7 @@ app.post('/streams/:stream_id/vod', async (req, res) => {
 app.post('/streams/:stream_id/clip', async (req, res) => {
   const streamId = req.params.stream_id;
 
-  console.log(`CLIP ${streamId}`);
+  console.log(`STREAM CLIP ${streamId}`);
 
   let status;
   try {
@@ -95,6 +95,27 @@ app.post('/streams/:stream_id/clip', async (req, res) => {
     status = await Streams.StreamToVod({libraryId, objectId: streamId});
 
     status = await Streams.StreamClip({vodObjectId: status.vod_object_id, vodObjectHash: status.vod_hash,
+      clipStart: req.body.clip_start, clipEnd: req.body.clip_end});
+
+    } catch(e) {
+    console.log("ERROR", e, JSON.stringify(e.body,  null, 2));
+  }
+
+  res.status(200).json(status);
+});
+
+// POST /vod/:vod_id/clip
+// - clip_start
+// - clip_end
+app.post('/vod/:vod_id/clip', async (req, res) => {
+  const vodObjectId = req.params.vod_id;
+
+  console.log(`VOD CLIP ${vodObjectId}`);
+
+  let status;
+  try {
+
+    status = await Streams.StreamClip({vodObjectId,
       clipStart: req.body.clip_start, clipEnd: req.body.clip_end});
 
     } catch(e) {

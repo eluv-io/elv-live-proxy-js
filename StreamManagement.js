@@ -110,6 +110,12 @@ const StreamProbeAndConfig = async ({argv}) => {
 
 const StreamStatus = async ({libraryId, objectId}) => {
 
+  // Allow both hash and object ID
+  if (objectId.startsWith("hq_")) {
+    objectId = client.utils.DecodeVersionHash(objectId).objectId;
+    console.log("HASH2ID", objectId);
+  }
+
   let status = {
     libraryId,
     objectId
@@ -370,6 +376,12 @@ const StreamStopRecording = async ({libraryId, objectId}) => {
 
 const StreamToVod = async ({libraryId, objectId, vodObjectId, vodId, vodName}) => {
 
+  // Allow both hash and object ID
+  if (objectId.startsWith("hq_")) {
+    objectId = client.utils.DecodeVersionHash(objectId).objectId;
+    console.log("HASH2ID", objectId);
+  }
+
   let status = await StreamStatus({libraryId, objectId});
   if (status.state != "stopped" && status.state != "running" && status.state != "starting" && status.state != "reconnecting") {
     console.log("ERROR: can only copy an active stream", status.state);
@@ -614,6 +626,11 @@ const StreamDiscardRecording = async ({libraryId, objectId}) => {
 }
 
 const StreamClip = async ({vodObjectId, vodObjectHash, clipStart, clipEnd}) => {
+
+  // Ensuure we have a version hash
+  if (vodObjectHash == undefined) {
+    vodObjectHash = await client.LatestVersionHash({libraryId: vodLibraryId, objectId: vodObjectId});
+  }
 
   // Make access token
   let accessToken = await client.authClient.GenerateAuthorizationToken({
