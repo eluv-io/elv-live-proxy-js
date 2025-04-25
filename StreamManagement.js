@@ -182,9 +182,14 @@ const StreamStatus = async ({libraryId, objectId}) => {
   if (!statusRes.handle) {
     status.state = "stopped"
   } else {
+
+    const accessToken = await client.CreateFabricToken({
+      duration: 7 * 24 * 60 * 60 * 1000, // millisec
+    });
+
     status.recording_id = status.edge_write_token;
     status.playout = {
-      hls: "https://main.net955305.contentfabric.io/s/main/q/" + status.hash + "/rep/playout/default/hls-clear/playlist.m3u8"
+      hls: "https://main.net955305.contentfabric.io/t/" + accessToken + "/q/" + status.hash + "/rep/playout/default/hls-clear/playlist.m3u8"
     }
     status.state = statusRes.custom.state;
     status.quality = statusRes.custom.quality;
@@ -249,8 +254,12 @@ const StreamStartRecording = async ({libraryId, objectId, vod, vodId, vodName}) 
 
   status = await StreamStart({objectId, libraryId});
 
+  const accessToken = await client.CreateFabricToken({
+    duration: 7 * 24 * 60 * 60 * 1000, // millisec
+  });
+
   status.playout = {
-    hls: "https://main.net955305.contentfabric.io/s/main/q/" + status.hash + "/rep/playout/default/hls-clear/playlist.m3u8"
+    hls: "https://main.net955305.contentfabric.io/t/" + accessToken + "/q/" + status.hash + "/rep/playout/default/hls-clear/playlist.m3u8"
   }
 
   // Create VOD if requested
